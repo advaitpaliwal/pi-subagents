@@ -23,6 +23,7 @@ import { SUBAGENT_ASYNC_COMPLETE_EVENT, SUBAGENT_FOREGROUND_COMPLETE_EVENT } fro
 import { createResultDeliveryOwnership } from "../../src/runs/background/result-delivery-ownership.ts";
 import { createParentWake } from "../../src/shared/parent-wake.ts";
 import { finalizeSingleOutput } from "../../src/runs/shared/single-output.ts";
+import { formatPartialOutput, timedOutRunSummary } from "../../src/runs/shared/partial-output.ts";
 
 const COMPLETION_OWNER_ID = "completion-owner-a";
 const completionContent = (content: string) => `${content}\n\nParent action: Read the saved results above and resume the already-authorized parent task, or report completion. If approval is required, explicitly ask the user. Do not silently yield, rerun completed work, or infer new authorization.`;
@@ -1382,6 +1383,29 @@ describe("completion notice output size", () => {
 			assert.match(short, /worker:\nshort output/);
 			assert.doesNotMatch(short, /Full output:/);
 			assert.ok(notice(output, join(root, "missing.md")).includes(output), "without a full-output file the output stays inline");
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	it("shows a timed-out child's partial output and its file instead of only the timeout line", () => {
+		const root = mkdtempSync(join(tmpdir(), "notify-output-timeout-"));
+		try {
+			const artifact = join(root, "worker_output.md");
+			const output = formatPartialOutput(longOutput("partial"), "timeout");
+			writeFileSync(artifact, output);
+			const timeout = "Subagent timed out after 300000ms.";
+			const result = { agent: "worker", success: false, timedOut: true, outputPartial: true, output, error: timeout, artifactPaths: { outputPath: artifact } };
+			const content = formatSingleCompletion(buildCompletionDetails({
+				agent: "worker", success: false, timedOut: true, error: timeout,
+				summary: timedOutRunSummary(timeout, `worker:\n${output}`, [result]),
+				results: [result],
+			}));
+			assert.match(content, /Subagent timed out after 300000ms\.\n\nworker:\nPartial output before timeout:\npartial line 0 /);
+			assert.ok(!content.includes("partial line 199"));
+			assert.match(content, /\nFull output: .*worker_output\.md \(\d+\.\d KB, 201 lines\)\. Read it if needed\./);
+			assert.equal(content.split(timeout).length, 2, "the timeout line is not repeated as an Error line");
+			assert.equal(timedOutRunSummary(timeout, `worker:\n${timeout}`, [{ outputPartial: undefined }]), timeout);
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}
