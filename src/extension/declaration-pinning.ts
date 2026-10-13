@@ -7,7 +7,7 @@ import type { TSchema } from "typebox";
 // the provider re-read the whole conversation without its prompt cache, so a session keeps the
 // pi-subagents definitions and prompt text it already declared. Only a session that never
 // declared a tool gets its current definition. Setting `pinToolDeclarations` to false turns this
-// off, so a resumed session gets the current definitions at the cost of one prompt-cache miss. ([#2852](https://github.com/nicobailon/pi-subagents/issues/2852))
+// off, so a resumed session gets the current definitions at the cost of one prompt-cache miss. (#2852)
 
 type PinnableTool = ToolDefinition<TSchema, unknown>;
 

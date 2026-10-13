@@ -116,7 +116,7 @@ Controls the parent-facing `subagent` tool description registered at startup. Th
 { "pinToolDeclarations": false }
 ```
 
-Pi records each tool definition and prompt section a session declares, and declares any difference again before the next request; a changed definition makes the provider read the whole conversation again without its prompt cache. So by default (`true`) a resumed or reloaded session keeps the `subagent`, `bg_wait`, and `subagents_enable` definitions and the pi-subagents prompt text it already declared, and only a session that never declared a tool gets its current definition. With `false`, every session gets the current definitions: a long-lived session picks up an upgrade, a changed `toolDescriptionMode`, `disabledFeatures`, or an edited custom description on the next restart, and pays one cache miss on its next request. Restart Pi after changing it.
+Pi records each tool definition and prompt section a session declares, and declares any difference again before the next request; a changed definition makes the provider read the whole conversation again without its prompt cache. So by default (`true`) a resumed or reloaded session keeps the `subagent`, `bg_wait`, and `subagents_enable` definitions and the pi-subagents prompt text it already declared, and only a session that never declared a tool gets its current definition. With `false`, every parent session gets the current definitions (subagent children stay pinned): a long-lived session picks up an upgrade, a changed `toolDescriptionMode`, `disabledFeatures`, or an edited custom description on the next restart, and pays one cache miss on its next request. Restart Pi after changing it.
 
 ## `disabledFeatures`
 
