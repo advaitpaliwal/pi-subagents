@@ -162,7 +162,7 @@ export interface CompletionNotifier {
 	/** Releases a completion wake once Pi starts it (native message_start). */
 	messageStarted(message: AgentMessage): void;
 	/** Adopts wakes a reloaded notifier left queued for the same session manager and session UUID. */
-	bindSession(sessionManager: Pick<ExtensionContext["sessionManager"], "getSessionId"> & Partial<Pick<ExtensionContext["sessionManager"], "getEntries">>): void;
+	bindSession(sessionManager: Pick<ExtensionContext["sessionManager"], "getSessionId"> & Partial<Pick<ExtensionContext["sessionManager"], "getBranch">>): void;
 	/** Unless the session is only reloading extensions, records the notices of wakes Pi never started in the session (resent on its next start) and drops the wakes. */
 	sessionShutdown(reason: string | undefined): void;
 	/** Send every batched completion now instead of waiting for its batch timer. */
@@ -1119,8 +1119,9 @@ export default function registerSubagentNotify(
 			updateSettleSubscription();
 			// A new process on this session: resend notices the previous one recorded at shutdown.
 			// Deferred past session_start: a wake sent from inside it appended the notice but started no turn (Pi 1.0.4).
-			if (firstBind && typeof sessionManager.getEntries === "function") {
-				const pendingNotices = unreplayedPendingNotices(sessionManager.getEntries() as NotifyEntry[]);
+			// Only the active branch: a resend recorded on an abandoned branch never reached this one.
+			if (firstBind && typeof sessionManager.getBranch === "function") {
+				const pendingNotices = unreplayedPendingNotices(sessionManager.getBranch() as NotifyEntry[]);
 				if (pendingNotices.length) (options.timers?.setTimeout ?? setTimeout)(() => replayNotices(sessionId, pendingNotices), 0);
 			}
 		},

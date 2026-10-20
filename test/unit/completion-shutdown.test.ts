@@ -9,10 +9,12 @@ type Entry = { type: string; customType?: string; content?: unknown; data?: unkn
 
 // One session file shared by successive Pi processes. `appended` false is a busy parent:
 // Pi queues the notice as a steer, which it drops if the process ends before starting it.
+// `abandoned` holds entries on another branch of the session tree: in the file, but not on the active branch.
 function session() {
 	const id = randomUUID();
 	const entries: Entry[] = [];
-	return { entries, manager: () => ({ getSessionId: () => id, getEntries: () => entries }) };
+	const abandoned: Entry[] = [];
+	return { entries, abandoned, manager: () => ({ getSessionId: () => id, getEntries: () => [...entries, ...abandoned], getBranch: () => entries }) };
 }
 
 // A reload keeps Pi's session manager object; a new process creates a new one.
@@ -69,6 +71,23 @@ it("resends a notice whose wake Pi never started when the next process opens the
 		assert.equal(third.sent.length, 0, "a notice already in the session is not sent again");
 	} finally {
 		third.quit();
+	}
+});
+
+it("resends a pending notice that only another branch of the session carries", async () => {
+	const file = session();
+	const first = processOn(file);
+	first.bind();
+	await first.deliver();
+	first.quit();
+	file.abandoned.push({ type: "custom_message", customType: "subagent-notify", content: first.sent[0]!.message.content });
+	const second = processOn(file, true);
+	second.bind();
+	await tick();
+	try {
+		assert.equal(second.sent.length, 1, "a resend on an abandoned branch does not cancel the active branch's notice");
+	} finally {
+		second.quit();
 	}
 });
 
