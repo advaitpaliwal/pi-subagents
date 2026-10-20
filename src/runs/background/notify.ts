@@ -1010,7 +1010,8 @@ export default function registerSubagentNotify(
 			};
 			try {
 				if (pi.sendMessage(message, { triggerTurn: true }) && tracked) release();
-			} catch {
+			} catch (error) {
+				console.error("Failed to resend a subagent completion notice recorded at the last shutdown; the next start retries it:", error);
 				if (tracked) {
 					release();
 					unansweredCompletions.delete(message.content);
