@@ -1132,8 +1132,9 @@ export default function registerSubagentNotify(
 					try {
 						pi.appendEntry?.(PENDING_NOTICE_ENTRY, { message } satisfies PendingNoticeEntry);
 						traceNotification(pi.appendEntry ? "shutdown_persisted" : "shutdown_persist_failed");
-					} catch {
+					} catch (error) {
 						traceNotification("shutdown_persist_failed");
+						console.error("Failed to record an undelivered subagent completion notice in the session; it is lost:", error);
 					}
 				}
 				queuedNotices.clear();

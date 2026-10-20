@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- A background subagent that finished while the parent was busy could lose its completion notice if Pi restarted before the parent got to it. The notice waited in Pi's queue as a steer, but pi-subagents already counted it as delivered and deleted the result file. Pi drops queued steers when the session ends, and the next process can't claim another process's result, so nothing ever showed the notice. Now a notice whose wake never started is written to the session when it ends (a `subagent-notify-pending` entry), and the next Pi process that opens the session, for example after a restart or with `pi --continue`, resends it and wakes the parent. A notice that is already in the session is not sent again, and `/reload` is unchanged.
+- A background subagent that finished while the parent was busy could lose its completion notice if Pi restarted before the parent got to it. The notice waited in Pi's queue as a steer, but pi-subagents already counted it as delivered and deleted the result file. Pi drops queued steers when the session ends, and the next process can't claim another process's result, so nothing ever showed the notice. Now a notice whose wake never started is written to the session when it ends (a `subagent-notify-pending` entry), and the next Pi process that opens the session, for example after a restart or with `pi --continue`, resends it and wakes the parent. A notice that is already in the session is not sent again, and `/reload` is unchanged. Thanks to [@advaitpaliwal](https://github.com/advaitpaliwal) for [#2968](https://github.com/nicobailon/pi-subagents/pull/2968).
 
 ## [0.79.1] - 2026-10-17
 
